@@ -1,0 +1,64 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model BNFChapter {
+  code   String   @id @map("code")
+  name   String   @map("name")
+
+  sections BNFSection[]
+
+  @@map("bnf_chapters")
+}
+
+model BNFSection {
+  code         String      @id @map("code")
+  name         String      @map("name")
+  chapterCode  String      @map("chapter_code")
+  chapter      BNFChapter  @relation(fields: [chapterCode], references: [code])
+
+  paragraphs   BNFParagraph[]
+
+  @@map("bnf_sections")
+}
+
+model BNFParagraph {
+  code        String         @id @map("code")
+  name        String         @map("name")
+  sectionCode String         @map("section_code")
+  section     BNFSection     @relation(fields: [sectionCode], references: [code])
+
+  substances  ChemicalSubstance[]
+
+  @@map("bnf_paragraphs")
+}
+
+model ChemicalSubstance {
+  code           String              @id @map("code")
+  name           String              @map("name")
+  paragraphCode  String              @map("paragraph_code")
+  paragraph      BNFParagraph        @relation(fields: [paragraphCode], references: [code])
+
+  stats          ChemicalSubstanceStats[]
+
+  @@map("chemical_substances")
+}
+
+model ChemicalSubstanceStats {
+  id              Int      @id @default(autoincrement()) @map("id")
+  year            Int      @map("year")
+  totalItems      Int      @map("total_items")
+  totalCostGbp    Decimal  @db.Money @map("total_cost_gbp")
+  costPerItemGbp  Decimal  @db.Money @map("cost_per_item_gbp")
+
+  chemicalCode    String   @map("chemical_code")
+  chemical        ChemicalSubstance @relation(fields: [chemicalCode], references: [code])
+
+  @@unique([chemicalCode, year])
+  @@map("chemical_substance_stats")
+}
